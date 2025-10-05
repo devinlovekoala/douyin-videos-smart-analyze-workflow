@@ -5,13 +5,8 @@ import json
 from typing import Optional, List, Dict, Tuple, Iterable
 from enum import Enum
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 import cv2
-
-try:
-    from openai import OpenAI
-except Exception:
-    OpenAI = None
+from openai import OpenAI
 
 
 class Strategy(Enum):
@@ -22,7 +17,7 @@ class Strategy(Enum):
 class VideoAnalyzer:
     def __init__(
         self,
-        api_key: Optional[str] = "a923c210-64ac-43db-b0b9-5122b11a6aa7",
+        api_key: Optional[str] = None,
         base_url: str = "https://ark.cn-beijing.volces.com/api/v3",
         model: str = "doubao-1-5-thinking-vision-pro-250428",
         prompt_dir: str = "propmt",
