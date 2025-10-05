@@ -1,0 +1,21 @@
+评估视频质量,以JSON格式返回:
+
+{
+  "technical_quality": {
+    "resolution": "分辨率质量(高清/标清/低清)",
+    "stability": "画面稳定性(稳定/一般/抖动)",
+    "lighting": "光线质量(优秀/良好/一般/较差)",
+    "audio": "音频质量(清晰/一般/嘈杂/无声)"
+  },
+  "content_quality": {
+    "creativity": "创意程度(高/中/低)",
+    "completeness": "内容完整性(完整/基本完整/不完整)",
+    "professionalism": "专业度(专业/半专业/业余)"
+  },
+  "engagement_factors": ["吸引力要素(如:节奏感强/画面精美/有趣/实用等)"],
+  "overall_score": "综合评分(0-10分,整数)",
+  "key_strengths": ["主要优点"],
+  "improvements": ["改进建议"]
+}
+
+仅返回有效的JSON对象,不要添加其他文字说明。

@@ -1,0 +1,23 @@
+分析这个视频的视觉风格,以JSON格式返回分析结果:
+
+{
+  "visual_style": "画面风格(写实/卡通/动画/3D渲染/手绘/复古/现代等)",
+  "color_palette": {
+    "main_colors": ["主色调"],
+    "saturation": "饱和度(高/中/低)",
+    "brightness": "明暗(明亮/适中/暗调)",
+    "temperature": "色温(暖色调/中性/冷色调)"
+  },
+  "composition": {
+    "shot_types": ["镜头类型(特写/中景/远景等)"],
+    "camera_movement": "镜头运动(固定/运动/手持/稳定器等)"
+  },
+  "production_quality": {
+    "level": "制作水平(专业/半专业/个人创作)",
+    "resolution": "清晰度(高清/标清/模糊)",
+    "editing": "剪辑水平(精良/一般/简单)"
+  },
+  "style_tags": ["风格标签(小清新/赛博朋克/胶片风/复古/暗黑/华丽/简约等)"]
+}
+
+仅返回有效的JSON对象,不要添加其他文字说明。
