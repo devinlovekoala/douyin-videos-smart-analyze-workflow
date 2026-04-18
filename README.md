@@ -1,163 +1,156 @@
-# Smart Short Video Ecosystem Analysis System
+<div align="center">
 
-> An intelligent content understanding and distribution evaluation system for short-form video platforms, powered by ByteDance's open-source **Seed1.5-VL** multimodal foundation model.
+<img src="https://img.shields.io/badge/Python-3.7+-3776AB?style=flat-square&logo=python" />
+<img src="https://img.shields.io/badge/Seed1.5--VL-ByteDance-E31937?style=flat-square" />
+<img src="https://img.shields.io/badge/OpenCV-cv2-5C3EE8?style=flat-square&logo=opencv" />
+<img src="https://img.shields.io/badge/Concurrency-16_workers-green?style=flat-square" />
+<img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
+
+# Smart Short Video Ecosystem Analyzer
+
+**Five-pass multimodal analysis and weighted ecosystem scoring for short-form video platforms**
+
+[Quick Start](#quick-start) · [Methodology](#innovation--methodology) · [Results](#empirical-results) · [Report Bug](https://github.com/devinlovekoala/smart-video-ecosystem/issues)
+
+</div>
 
 ---
 
 ## Overview
 
-This system performs deep multi-dimensional analysis of short videos — covering content semantics, visual style, community governance signals, and distribution potential — and produces structured labels plus a quantitative ecosystem fitness score. It is designed to support content recommendation, platform governance, and creator guidance at scale on Douyin-style short video platforms.
+This system performs deep multi-dimensional analysis of short videos — covering content semantics, visual style, community governance signals, and distribution potential — and produces structured labels plus a quantitative ecosystem fitness score.
 
-The pipeline ingests raw video files, extracts representative keyframes, submits them to a Vision-Language Model (VLM) for five parallel analytical passes, and synthesizes the results into actionable intelligence without any redundant inference calls.
+The core insight is that a single generic prompt cannot reliably capture all signals needed for platform-level decision making. Instead, the pipeline decomposes video understanding into **five specialized analytical passes**, runs them concurrently against ByteDance's open-source **Seed1.5-VL** multimodal model, and synthesizes results into a 12-dimension label set and a weighted [0, 1] fitness score — with **zero redundant inference calls** through result caching.
+
+Designed to support content recommendation, platform governance, and creator guidance at scale on short-video platforms.
 
 ---
 
 ## Innovation & Methodology
 
-### 1. Five-Pass Multimodal Analysis Architecture
+### Five-Pass Multimodal Analysis
 
-Rather than relying on a single generic prompt, the system decomposes video understanding into five specialized analytical passes, each backed by a purpose-designed prompt template:
+Rather than relying on a single generic prompt, video understanding is decomposed into five specialized passes, each backed by a purpose-designed prompt template and running concurrently via `ThreadPoolExecutor`:
 
-| Pass | Module | What It Captures |
-|---|---|---|
-| Content Understanding | `content_understanding.txt` | Theme category, narrative elements, information density, audience profiling |
-| Visual Style Recognition | `visual_style.txt` | Art style (realistic / cartoon / 3D / retro / cyberpunk / film-grain), color temperature, saturation, composition, production tier |
-| Community Atmosphere | `community_atmosphere.txt` | Emotional valence, value orientation, health score, community impact, risk signals |
-| Distribution Features | `distribution_features.txt` | Viral triggers, engagement drivers, timeliness (trending vs. evergreen), scene matching |
-| Multimodal Feature Extraction | `multimodal_features.txt` | Cross-modal fusion of visual, motion, temporal, semantic, and emotional signals |
+| Pass | Prompt Template | What It Captures |
+|------|----------------|-----------------|
+| Content Understanding | `content_understanding.txt` | Theme, narrative, information density, audience profiling |
+| Visual Style Recognition | `visual_style.txt` | Art style (realistic / cartoon / 3D / retro / cyberpunk / film-grain), color temperature, composition, production tier |
+| Community Atmosphere | `community_atmosphere.txt` | Emotional valence, value orientation, health score, risk signals |
+| Distribution Features | `distribution_features.txt` | Viral triggers, engagement drivers, timeliness, scene matching |
+| Multimodal Feature Extraction | `multimodal_features.txt` | Cross-modal fusion: visual, motion, temporal, semantic, emotional |
 
-Each pass runs concurrently via `ThreadPoolExecutor`, and all downstream modules (label generation, ecosystem scoring) reuse the cached inference results — **zero redundant API calls**.
+All downstream modules reuse the cached inference results — no redundant API calls regardless of how many analysis steps follow.
 
-### 2. 12-Dimension Structured Label System
+### 12-Dimension Structured Label System
 
-The `ContentLabelingSystem` synthesizes the five analytical passes into a normalized, deduplicated label set across 12 semantic dimensions:
+`ContentLabelingSystem` synthesizes the five passes into a normalized, deduplicated label set across 12 semantic dimensions that map directly to the slot structure of downstream recommendation, search, and moderation systems:
 
-```raw
-Content Dimensions:    content_type · emotion · scene
-Visual Dimensions:     visual_style · color_tone · production_quality
-User Dimensions:       target_audience · interaction_type
-Distribution Dims:     distribution · distribution_scene
-Governance Dims:       community_impact · content_safety
+```
+Content:      content_type · emotion · scene
+Visual:       visual_style · color_tone · production_quality
+User:         target_audience · interaction_type
+Distribution: distribution · distribution_scene
+Governance:   community_impact · content_safety
 ```
 
-This label schema directly maps to the slot structure of downstream recommendation, search, and moderation systems.
+### Weighted Ecosystem Fitness Score
 
-### 3. Weighted Ecosystem Fitness Score
-
-The `DouyinEcosystemAnalyzer` computes a single [0, 1] fitness score via a five-factor weighted model:
+`DouyinEcosystemAnalyzer` computes a single [0, 1] fitness score via a five-factor weighted model:
 
 | Factor | Weight | Rationale |
-|---|---|---|
+|--------|--------|-----------|
 | Viral Potential | 25% | Primary driver of platform growth |
 | Engagement Potential | 20% | Retention and interaction signal |
 | Content Quality | 20% | Production standard and watch-completion proxy |
 | Platform Fit | 20% | Alignment with platform audience and norms |
 | Audience Appeal | 15% | Target-demographic resonance |
 
-Each factor is scored using a three-tier keyword matching system (high / medium / low signal keywords) applied to the VLM analysis text, then blended 50/50 with an AI-assessed quality score on a 0–10 scale. The final score drives a four-tier recommendation:
+Each factor is scored via three-tier keyword matching (high / medium / low signal) applied to VLM analysis text, then blended 50/50 with an AI-assessed quality score on a 0–10 scale. Final score drives a four-tier recommendation:
 
-- **≥ 0.75** — Strongly Recommended (High Ecosystem Value)
-- **0.65 – 0.74** — Recommended (Good Fit)
-- **0.55 – 0.64** — Moderate (Needs Optimization)
-- **< 0.55** — Not Recommended
+| Score | Tier |
+|-------|------|
+| ≥ 0.75 | Strongly Recommended |
+| 0.65 – 0.74 | Recommended |
+| 0.55 – 0.64 | Needs Optimization |
+| < 0.55 | Not Recommended |
 
-### 4. Adaptive Keyframe Sampling
+### Adaptive Keyframe Sampling
 
 Frame extraction uses an EVEN_INTERVAL strategy that adapts to video duration, sampling up to **30 representative keyframes** per video. Images are resized and Base64-encoded before submission, balancing inference accuracy against API payload size.
 
-### 5. Content-Type-Aware Scoring Profiles
+### Content-Type-Aware Scoring Profiles
 
-Scoring profiles are parameterized per content type. For example, comedy and drama content receives higher weight on viral potential triggers (humor, surprise, novelty), while educational and craft content is evaluated more heavily on engagement potential (knowledge, skill demonstration). This avoids a single universal scoring bias.
+Scoring profiles are parameterized per content type. Comedy and drama content receives higher weight on viral potential triggers (humor, surprise, novelty); educational and craft content is weighted more heavily on engagement potential (knowledge, skill demonstration). This avoids a universal scoring bias across genres.
 
 ---
 
-## System Architecture
+## Architecture
 
-```raw
+```
 smart_videos/
-├── smart_videos.ipynb              # Orchestration notebook (6-step pipeline)
-├── video_analyzer.py               # Core VLM inference engine
-│   ├── Frame extraction (EVEN_INTERVAL, up to 30 frames)
-│   ├── Concurrent batch analysis (ThreadPoolExecutor, 16 workers)
+├── smart_videos.ipynb              orchestration notebook (6-step pipeline)
+├── video_analyzer.py               core VLM inference engine
+│   ├── frame extraction            EVEN_INTERVAL, up to 30 frames
+│   ├── concurrent batch analysis   ThreadPoolExecutor, 16 workers
 │   └── 5-pass per-video analysis
-├── content_labeling_system.py      # 12-dimension label synthesizer
-├── douyin_ecosystem_analyzer.py    # Weighted ecosystem scorer
-├── propmt/                         # Prompt templates (5 analysis types + fallback)
-├── download_videos/                # Input video directory
+├── content_labeling_system.py      12-dimension label synthesizer
+├── douyin_ecosystem_analyzer.py    weighted ecosystem scorer
+├── prompt/                         prompt templates (5 types + fallback)
+├── download_videos/                input video directory
 └── results/
-    ├── video_analysis_results.json # Raw VLM outputs
-    ├── video_labels.json           # Structured label data
-    ├── ecosystem_scores.json       # Per-video fitness scores
-    └── analysis_report.json        # Aggregated summary report
+    ├── video_analysis_results.json raw VLM outputs
+    ├── video_labels.json           structured label data
+    ├── ecosystem_scores.json       per-video fitness scores
+    └── analysis_report.json        aggregated summary report
 ```
 
 **Processing flow:**
-```raw
-Video files → Frame extraction → Concurrent 5-pass VLM inference
-    → Label synthesis (reuses cached results)
-    → Ecosystem scoring (reuses cached results)
-    → JSON report generation
+
 ```
-
----
-
-## Technology Stack
-
-| Component | Technology |
-|---|---|
-| Multimodal Foundation Model | Seed1.5-VL (ByteDance open-source VLM) |
-| Inference API | Volcengine (OpenAI-compatible SDK) |
-| Video Processing | OpenCV (cv2) |
-| Numerical Processing | NumPy, scikit-learn |
-| Concurrency | Python `ThreadPoolExecutor` (16 workers) |
-| Runtime | Python 3.7+, Jupyter |
-| Output Format | JSON (UTF-8, full CJK support) |
-
-Supported video formats: `.webm` · `.mp4` · `.avi` · `.mov` · `.mkv`
+Video files
+    │
+    ▼
+Frame extraction (EVEN_INTERVAL, ≤30 frames, Base64)
+    │
+    ▼
+Concurrent 5-pass VLM inference (ThreadPoolExecutor, 16 workers)
+    │              └── results cached, reused downstream
+    ├── Label synthesis     (ContentLabelingSystem)
+    └── Ecosystem scoring   (DouyinEcosystemAnalyzer)
+    │
+    ▼
+JSON report generation → results/
+```
 
 ---
 
 ## Empirical Results
 
-The following metrics are drawn from a live evaluation run on **10 real Douyin short videos** spanning diverse content categories.
-
-### Dataset Composition
-
-| Content Category | Count | Share |
-|---|---|---|
-| Daily Vlog | 2 | 20% |
-| Game / Esports | 2 | 20% |
-| Comedy / Drama Clips | 2 | 20% |
-| Variety / Entertainment | 1 | 10% |
-| Music | 1 | 10% |
-| Handcraft / DIY | 1 | 10% |
-| Sports | 1 | 10% |
+Evaluation on **10 real Douyin short videos** across 7 content categories.
 
 ### Pipeline Reliability
 
 | Metric | Value |
-|---|---|
-| Videos submitted | 10 |
-| Successfully analyzed | 10 |
-| Analysis success rate | **100%** |
-| Label generation success rate | **100%** |
-| Ecosystem scoring success rate | **100%** |
+|--------|-------|
+| Analysis success rate | **100%** (10/10) |
+| Label generation success rate | **100%** (10/10) |
+| Ecosystem scoring success rate | **100%** (10/10) |
 
 ### Ecosystem Score Distribution
 
 | Metric | Value |
-|---|---|
+|--------|-------|
 | Average ecosystem score | **0.641** |
-| Highest score | **0.81** (Comedy Drama) |
-| Lowest score | **0.51** (Game footage) |
-| Videos scored ≥ 0.75 (Strongly Recommended) | **2 / 10** (20%) |
-| Videos scored ≥ 0.65 (Recommended or above) | **6 / 10** (60%) |
-| Videos scored < 0.55 (Needs Optimization) | **4 / 10** (40%) |
+| Highest score | **0.81** — Comedy Drama |
+| Lowest score | **0.51** — Game footage (no commentary) |
+| Strongly Recommended (≥ 0.75) | **2 / 10** (20%) |
+| Recommended or above (≥ 0.65) | **6 / 10** (60%) |
 
-### Per-Video Scores (All 10 Videos)
+### Per-Video Scores
 
-| Video | Content Type | Viral | Engage | Quality | Platform Fit | Audience | **Overall** | Tier |
-|---|---|---|---|---|---|---|---|---|
+| Video | Content Type | Viral | Engage | Quality | Fit | Audience | **Score** | Tier |
+|-------|-------------|-------|--------|---------|-----|----------|-----------|------|
 | Recording 20-55-49 | Comedy Drama | 0.90 | 0.90 | 0.65 | 0.70 | 0.90 | **0.81** | Strongly Recommended |
 | Recording 21-06-25 | Variety Show | 0.80 | 0.80 | 0.65 | 0.80 | 1.00 | **0.80** | Strongly Recommended |
 | Recording 21-05-17 | Daily Vlog | 0.70 | 0.70 | 0.65 | 0.80 | 1.00 | **0.76** | Recommended |
@@ -169,57 +162,19 @@ The following metrics are drawn from a live evaluation run on **10 real Douyin s
 | Recording 20-52-43 | Game | 0.30 | 0.30 | 0.65 | 0.60 | 0.90 | **0.52** | Needs Optimization |
 | Recording 20-57-58 | Game | 0.30 | 0.30 | 0.65 | 0.60 | 0.80 | **0.51** | Needs Optimization |
 
-### Dimension Score Averages (Across All 10 Videos)
+### Dimension Averages
 
-| Dimension | Average Score |
-|---|---|
-| Viral Potential | 0.61 |
-| Engagement Potential | 0.59 |
-| Content Quality | 0.62 |
-| Platform Fit | **0.71** (highest) |
-| Audience Appeal | **0.90** (strongest) |
+| Dimension | Average | Note |
+|-----------|---------|------|
+| Audience Appeal | **0.90** | Strongest — VLM accurately identifies target demographics |
+| Platform Fit | **0.71** | Most stable — range 0.60–0.80 |
+| Content Quality | 0.62 | |
+| Viral Potential | 0.61 | |
+| Engagement Potential | 0.59 | |
 
-### Visual Style Distribution
+### Key Finding: Content-Format Gap in Game Content
 
-| Visual Style | Count | Share |
-|---|---|---|
-| Realistic | 6 | 60% |
-| 3D Rendered | 2 | 20% |
-| Retro / Film-grain | 1 | 10% |
-| Modern / Animated | 1 | 10% |
-
-### Top Tag Frequencies
-
-| Tag | Videos | Frequency |
-|---|---|---|
-| Universal / Generic | 10 | 100% |
-| Medium Quality | 9 | 90% |
-| Neutral Tone | 8 | 80% |
-| Moderate Pacing | 7 | 70% |
-| Bright Color Tone | 7 | 70% |
-| Realistic Style | 6 | 60% |
-| Indoor Scene | 6 | 60% |
-| Happy / Upbeat | 4 | 40% |
-| Young Adult Audience | 4 | 40% |
-
-### Content Quality Assessment
-
-| Dimension | Distribution |
-|---|---|
-| Resolution: HD | 6 / 10 (60%) |
-| Resolution: SD | 4 / 10 (40%) |
-| Frame Stability: Stable or Moderate | 9 / 10 (90%) |
-| Audio: Clear | 8 / 10 (80%) |
-| Audio: Silent | 2 / 10 (20%) |
-| Production Tier: Amateur / Personal | 8 / 10 (80%) |
-| Production Tier: Semi-pro / Professional | 2 / 10 (20%) |
-
-### Key Findings
-
-- **Comedy and variety content** consistently achieves the highest ecosystem scores (0.80–0.81), driven by strong viral potential and engagement signals.
-- **Game / esports footage** without commentary or narration scores lowest on viral potential (0.30) and engagement potential (0.30), despite high audience appeal (0.80–1.00), revealing a content-format gap — the audience exists, but the raw footage format does not engage them.
-- **Audience Appeal** is the strongest dimension on average (0.90), indicating the VLM accurately identifies target demographics even for niche content.
-- **Platform Fit** is the most stable dimension (range: 0.60–0.80), reflecting the system's ability to consistently map content to platform norms.
+Game / esports footage scores uniformly low on viral potential (0.30) and engagement potential (0.30) despite high audience appeal (0.80–1.00). The audience exists, but raw footage without commentary or narration does not engage them. This pattern is consistent across all four game videos and suggests a systematic content-format gap, not a content-quality issue — a distinction that a single-pass generic scoring system would miss.
 
 ---
 
@@ -233,70 +188,59 @@ pip install -r requirements.txt
 
 ### 2. Configure API access
 
-```bash
-cp .env.example .env
-# Edit .env and fill OPENAI_API_KEY with your real key
-```
+Set your API key as an environment variable:
 
-```python
-# Read key from environment (OPENAI_API_KEY / VOLCENGINE_API_KEY)
-analyzer = VideoAnalyzer()
+```bash
+export VOLCENGINE_API_KEY=your_key_here
+# or
+export OPENAI_API_KEY=your_key_here
 ```
 
 ### 3. Add videos
 
-Place video files in the `download_videos/` directory. Supported formats: `.webm`, `.mp4`, `.avi`, `.mov`, `.mkv`.
+Place video files in `download_videos/`. Supported formats: `.webm` · `.mp4` · `.avi` · `.mov` · `.mkv`
 
 ### 4. Run the pipeline
 
-Open `smart_videos.ipynb` and execute cells sequentially:
+Open `smart_videos.ipynb` and execute cells in order:
 
+```
 1. Import modules
 2. Scan video directory
-3. Run AI content analysis (5-pass VLM inference)
+3. Run 5-pass VLM inference        ← main computation step
 4. Generate structured labels
 5. Compute ecosystem scores
 6. Export analysis report
+```
 
 ### 5. Review results
 
-All outputs are written to `results/`:
-
-```raw
+```
 results/
-├── video_analysis_results.json   # Raw VLM analysis per video per dimension
-├── video_labels.json             # 12-dimension structured labels
-├── ecosystem_scores.json         # Per-video fitness scores with dimension breakdown
-└── analysis_report.json          # Summary statistics and top-video rankings
+├── video_analysis_results.json    raw VLM outputs per video per dimension
+├── video_labels.json              12-dimension structured labels
+├── ecosystem_scores.json          per-video fitness scores with dimension breakdown
+└── analysis_report.json           summary statistics + top-video rankings
 ```
 
 ---
 
 ## Configuration
 
-### Concurrency
-
 ```python
+# Concurrency
 analyzer = VideoAnalyzer(max_workers=16)
-```
 
-### Frame extraction
-
-```python
+# Frame sampling
 analyzer = VideoAnalyzer(max_frames=30)
-```
 
-### Ecosystem scoring weights
-
-Weights are configurable in `douyin_ecosystem_analyzer.py`:
-
-```python
+# Scoring weights (douyin_ecosystem_analyzer.py)
 weights = {
-    "viral_potential": 0.25,
+    "viral_potential":    0.25,
     "engagement_potential": 0.20,
-    "content_quality": 0.20,
-    "platform_fit": 0.20,
-    "audience_appeal": 0.15,
+    "content_quality":    0.20,
+    "platform_fit":       0.20,
+    "audience_appeal":    0.15,
 }
 ```
 
@@ -304,12 +248,29 @@ weights = {
 
 ## Application Scenarios
 
-- **Content recommendation**: Feed ecosystem scores and structured labels directly into ranking and retrieval systems
-- **Platform governance**: Use community atmosphere and content safety labels for automated moderation triage
-- **Creator guidance**: Surface actionable optimization suggestions for low-scoring videos (e.g., "add commentary to increase engagement potential")
-- **Trend analysis**: Aggregate label distributions over time to detect emerging content categories
-- **Multi-platform strategy**: Adapt distribution scene matching for different platform audience profiles
-- **Quality control**: Automate quality gating for user-generated content based on production quality scores
+**Content recommendation** — Feed ecosystem scores and structured labels directly into ranking and retrieval systems.
+
+**Platform governance** — Use community atmosphere and content safety labels for automated moderation triage.
+
+**Creator guidance** — Surface actionable optimization suggestions for low-scoring videos (e.g., "add commentary to increase engagement potential for game content").
+
+**Trend analysis** — Aggregate label distributions over time to detect emerging content categories.
+
+**Quality control** — Automate quality gating for user-generated content based on production quality scores.
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Multimodal foundation model | Seed1.5-VL (ByteDance open-source VLM) |
+| Inference API | Volcengine (OpenAI-compatible SDK) |
+| Video processing | OpenCV (cv2) |
+| Numerical processing | NumPy, scikit-learn |
+| Concurrency | Python `ThreadPoolExecutor` (16 workers) |
+| Runtime | Python 3.7+, Jupyter |
+| Output | JSON (UTF-8, full CJK support) |
 
 ---
 
