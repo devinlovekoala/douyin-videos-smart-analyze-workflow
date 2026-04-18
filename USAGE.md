@@ -80,7 +80,7 @@ jupyter notebook smart_videos.ipynb
 
 分析完成后，查看 `results` 目录中的结果文件：
 
-```
+```raw
 results/
 ├── video_analyses.json      # 视频内容分析详情
 ├── video_labels.json         # 智能标签数据
@@ -172,15 +172,21 @@ results/
   "dimension_averages": {...}
 }
 ```
-
 ## 高级配置
 
 ### 修改 API 密钥
 
-在 notebook 中修改：
+推荐使用环境变量，不要在代码中硬编码：
+
+```bash
+cp .env.example .env
+# 编辑 .env，填写 OPENAI_API_KEY
+```
+
+在 notebook 中直接初始化即可：
 
 ```python
-analyzer = VideoAnalyzer(api_key="your-api-key-here")
+analyzer = VideoAnalyzer()
 ```
 
 ### 调整分析参数
@@ -224,7 +230,7 @@ A: 检查：
 
 ### Q: 内存不足怎么办？
 
-A: 
+A:
 1. 减少 `max_frames` 参数
 2. 一次分析少量视频
 3. 降低视频分辨率

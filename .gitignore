@@ -47,7 +47,8 @@ models/
 
 # 环境变量
 .env
-.env.local
+.env.*
+!.env.example
 
 # IDE
 .vscode/

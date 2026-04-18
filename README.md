@@ -32,7 +32,7 @@ Each pass runs concurrently via `ThreadPoolExecutor`, and all downstream modules
 
 The `ContentLabelingSystem` synthesizes the five analytical passes into a normalized, deduplicated label set across 12 semantic dimensions:
 
-```
+```raw
 Content Dimensions:    content_type · emotion · scene
 Visual Dimensions:     visual_style · color_tone · production_quality
 User Dimensions:       target_audience · interaction_type
@@ -73,7 +73,7 @@ Scoring profiles are parameterized per content type. For example, comedy and dra
 
 ## System Architecture
 
-```
+```raw
 smart_videos/
 ├── smart_videos.ipynb              # Orchestration notebook (6-step pipeline)
 ├── video_analyzer.py               # Core VLM inference engine
@@ -92,7 +92,7 @@ smart_videos/
 ```
 
 **Processing flow:**
-```
+```raw
 Video files → Frame extraction → Concurrent 5-pass VLM inference
     → Label synthesis (reuses cached results)
     → Ecosystem scoring (reuses cached results)
@@ -233,8 +233,14 @@ pip install -r requirements.txt
 
 ### 2. Configure API access
 
+```bash
+cp .env.example .env
+# Edit .env and fill OPENAI_API_KEY with your real key
+```
+
 ```python
-analyzer = VideoAnalyzer(api_key="your-volcengine-api-key")
+# Read key from environment (OPENAI_API_KEY / VOLCENGINE_API_KEY)
+analyzer = VideoAnalyzer()
 ```
 
 ### 3. Add videos
@@ -256,7 +262,7 @@ Open `smart_videos.ipynb` and execute cells sequentially:
 
 All outputs are written to `results/`:
 
-```
+```raw
 results/
 ├── video_analysis_results.json   # Raw VLM analysis per video per dimension
 ├── video_labels.json             # 12-dimension structured labels
@@ -271,13 +277,13 @@ results/
 ### Concurrency
 
 ```python
-analyzer = VideoAnalyzer(api_key="...", max_workers=16)
+analyzer = VideoAnalyzer(max_workers=16)
 ```
 
 ### Frame extraction
 
 ```python
-analyzer = VideoAnalyzer(api_key="...", max_frames=30)
+analyzer = VideoAnalyzer(max_frames=30)
 ```
 
 ### Ecosystem scoring weights

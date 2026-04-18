@@ -22,10 +22,16 @@ class VideoAnalyzer:
         model: str = "doubao-1-5-thinking-vision-pro-250428",
         prompt_dir: str = "propmt",
     ):
+        # Prefer explicit argument, then env vars for safer secret management.
+        resolved_api_key = api_key or os.getenv("OPENAI_API_KEY") or os.getenv("VOLCENGINE_API_KEY")
+        if not resolved_api_key:
+            raise ValueError(
+                "Missing API key. Pass api_key or set OPENAI_API_KEY / VOLCENGINE_API_KEY in environment."
+            )
         self.seed_vl_version = model
         self.client = OpenAI(
             base_url=base_url,
-            api_key=api_key,
+            api_key=resolved_api_key,
         )
         self.prompt_dir = prompt_dir
 
